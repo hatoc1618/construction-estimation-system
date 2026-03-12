@@ -1,0 +1,150 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DrawingDocument",
+  "description": "Agent A (PDF Loader) の出力フォーマット。図面ラスター→ベクトル化後の構造化表現。",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "図面の一意識別子（UUID）"
+    },
+    "source_file": {
+      "type": "string",
+      "description": "元 PDF ファイルパス"
+    },
+    "drawing_type": {
+      "type": "string",
+      "description": "図面種別（実装フェーズ2で観察して enum 確定予定）。現在は open のまま。例: ELEVATION, SECTION, PLAN, DETAIL_STAIR, KANABAKARI"
+    },
+    "scale": {
+      "type": "number",
+      "description": "図面縮尺（1:50 → 0.02, 1:100 → 0.01）",
+      "examples": [0.02, 0.01]
+    },
+    "page_size_mm": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "ページサイズ [width, height] (mm)",
+      "examples": [[210, 297]]
+    },
+    "entities": {
+      "type": "array",
+      "description": "ベクトル化されたエンティティ（直線、円弧、ポリライン等）",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "エンティティ ID"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["LINE", "POLYLINE", "ARC", "CIRCLE", "REGION"],
+            "description": "エンティティタイプ"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "description": "[[x1, y1], [x2, y2], ...] (mm座標)"
+          },
+          "layer_name": {
+            "type": "string",
+            "description": "DXF レイヤー名（BUILDING など）"
+          },
+          "length_mm": {
+            "type": "number",
+            "description": "計算済み長さ（ポリラインの場合）"
+          },
+          "area_mm2": {
+            "type": ["number", "null"],
+            "description": "面積（閉領域の場合のみ）"
+          }
+        },
+        "required": ["id", "type", "points"]
+      }
+    },
+    "texts": {
+      "type": "array",
+      "description": "OCR 認識されたテキスト（寸法値、注記等）",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "description": "認識テキスト"
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[x, y] テキスト中心座標"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "OCR 信頼度"
+          },
+          "semantic_type": {
+            "type": "string",
+            "enum": ["DIMENSION", "MATERIAL_NOTE", "TITLE", "SCALE", "OTHER"],
+            "description": "テキスト種別"
+          }
+        },
+        "required": ["id", "text", "position"]
+      }
+    },
+    "symbols": {
+      "type": "array",
+      "description": "検出されたシンボル（建具、設備等）",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "symbol_type": {
+            "type": "string",
+            "description": "シンボル種別（Agent B で詳細分類）"
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "bbox": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 4,
+            "maxItems": 4,
+            "description": "[x1, y1, x2, y2] バウンディングボックス"
+          }
+        },
+        "required": ["id", "position"]
+      }
+    }
+  },
+  "required": ["id", "entities"]
+}
